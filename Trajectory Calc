@@ -82,7 +82,7 @@ def Trejectory(theta,V,x,y,df_theta):
     plt.plot(x_drag,y_drag)
     df_x=pd.DataFrame(x_drag,columns=[x_name])
     df_y=pd.DataFrame(y_drag,columns=[y_name])
-    df_theta=pd.concat([df_theta,df_x,df_y],ignore_index=False)
+    df_theta=pd.concat([df_theta,df_x, df_y], axis=1)
 
     
     return df_theta
