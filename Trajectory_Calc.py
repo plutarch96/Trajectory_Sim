@@ -12,41 +12,74 @@ Created on Fri Jan 28 15:26:33 2022
 @author: Ryan
 """
 
-import numpy as np
+from matplotlib.patches import Rectangle, Wedge
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import getpass
 import math
+import numpy as np
+
+
+angles=list(np.linspace(-89,89,200))
+
+# spray characteristics
+height=20 # (ft)
+V=20 # (m/s)
+D=.004 # (m)
+
+# simulation resolution
+delt_t=.001 # (s)
+
+# grate specifications
+depth=1 # (in)
+thickness=.1875 # (in)
+grate_length=45 # (ft)
+grate_spacing=1 # (in)
+
+# close up of the grate interface
+zoom=1
+
+
+
+
+
+
+x=0
+i=0
+h_edge=[0,thickness]
 y_max=0
 total_range=0
 
-#angles=list(range(-80,80,10))
-angles=[10,20,30,40,50]
-height=10
-V=40
-D=.004
-G=9.80665
-delt_t=.001
+height=height*0.3048
+depth=depth*0.0254
+grate_length=grate_length*0.3048
+grate_spacing=grate_spacing*0.0254
+thickness=thickness*0.0254
 
-theta=20
+while i<grate_length:
+    i=i+grate_spacing
+    h_edge.append(i)
+    z=i+thickness
+    h_edge.append(z)
 
-
-
-
-x=0   
+len_edge=list(range(0,len(h_edge),2))
+  
 y=height
+G=9.80665
 mass=(4/3)*(3.141592653)*((D/2)**3)*(1000)
 rho=1.225
 A=(3.141592653*(D/2)**2)
 Cd=rho*.45*A/2
-print(mass)
+fig, ax = plt.subplots()
 df_theta=pd.DataFrame([])
-def Trejectory(theta,V,x,y,df_theta):
+
+def Trejectory(theta,V,x,y,df_theta,len_edge):
+
     theta_name=str(theta)
+
     theta=(theta*3.141592653/180)
-    vx=V*math.cos(theta)
-    vy=V*math.sin(theta)
+    
     
     total_range=(V*math.cos(theta)/G)*(V*math.sin(theta)+(V**2*math.sin(theta)**2+2*G*height)**.5)
     total_range=math.ceil(total_range)
@@ -62,36 +95,61 @@ def Trejectory(theta,V,x,y,df_theta):
     
     x_name=str(theta_name)+'_x'
     y_name=str(theta_name)+'_y'
+    def calculation(V,x,y):
+        vx=V*math.cos(theta)
+        vy=V*math.sin(theta)
+        while y>=-(depth+1):
+            
+            
+            ax=-(Cd/mass)*vx**2
+            ay=-G-(Cd/mass)*vx**2
     
-    while y>=0:
-        
-        
-        ax=-(Cd/mass)*vx**2
-        ay=-G-(Cd/mass)*vx**2
-
-        vx=vx+ax*delt_t
-        vy=vy+ay*delt_t
-        
-        
-        x=x+vx*delt_t
-        y=y+vy*delt_t
-        
-        x_drag.append(x)
-        y_drag.append(y)
-        
-    plt.plot(x_drag,y_drag)
+            vx=vx+ax*delt_t
+            vy=vy+ay*delt_t
+            
+            
+            x=x+vx*delt_t
+            y=y+vy*delt_t
+            
+            x_drag.append(x)
+            y_drag.append(y)
+            for n in len_edge:
+    
+                if (h_edge[n] <= x <= h_edge[n+1]) and (-depth <= y <= 0) :
+                    return
+                
+    calculation(V,x,y)
     df_x=pd.DataFrame(x_drag,columns=[x_name])
     df_y=pd.DataFrame(y_drag,columns=[y_name])
-    df_theta=pd.concat([df_theta,df_x, df_y], axis=1)
+    df_xy=pd.concat([df_x, df_y], axis=1)
+    
+    plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.7)
+    
+    df_xy=df_xy.loc[df_xy[y_name]<-depth].dropna()
+    df_xy=df_xy.dropna(axis='columns',how='all')
 
+    df_theta=pd.concat([df_theta,df_xy], axis=1)
     
     return df_theta
+
 for theta in angles:
-    df_theta=Trejectory(theta,V,x,y,df_theta)
-
+    df_theta=Trejectory(theta,V,x,y,df_theta,len_edge)
     
     
+clear_angles=list(df_theta.columns.values)
+clear_angles=[x for x in clear_angles if not 'x' in x]
 
+clear_angles=[s.replace("_y", "") for s in clear_angles]
+clear_angles=[float(x) for x in clear_angles]
+if zoom==1:
+    plt.ylim([-.05,.05])
+
+plt.grid()
+for i in h_edge[::2]:
+    ax.add_patch(Rectangle((i, 0), thickness, -depth))   
+
+
+    
     
 
 
