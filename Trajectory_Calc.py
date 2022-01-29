@@ -29,7 +29,7 @@ Velocities=[1,2,4,8,12,20] # (m/s)
 D=.004 # (m)
 
 # simulation resolution
-delt_t=.001 # (s)
+delt_t=.0001 # (s)
 
 # grate specifications
 depth=1 # (in)
@@ -58,7 +58,7 @@ while i<grate_length:
     h_edge.append(z)
 
 
-
+velocity_df=pd.DataFrame([])
 def Trejectory(theta,V,x,y,df_theta,len_edge):
     
 
@@ -165,7 +165,9 @@ for V in Velocities:
     plt.title(str(V)+' (m/s)')
     plt.xlabel('Initial Angle')
 
+    clear_angles=pd.DataFrame(clear_angles,columns=[str(V)+' (m/s)'])
     
+    velocity_df=pd.concat([velocity_df,clear_angles],axis=1)
     
 
 
