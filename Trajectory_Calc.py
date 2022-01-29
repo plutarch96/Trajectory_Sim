@@ -20,11 +20,11 @@ import getpass
 import math
 import numpy as np
 # number of points between -89 and 89 degrees
-resoultion=100
+resoultion=1000
 angles=list(np.linspace(-90,90,resoultion))
 
 # spray characteristics
-height=20 # (ft)
+height=10 # (ft)
 Velocities=[1,2,4,8,12,20] # (m/s)
 D=.004 # (m)
 
@@ -38,7 +38,7 @@ grate_length=45 # (ft)
 grate_spacing=1 # (in)
 
 # close up of the grate interface
-zoom=1
+zoom=0
 # what distance from sprinkler to focus on
 horizontal_view=[6,10]
 
@@ -138,11 +138,11 @@ for V in Velocities:
     rho=1.225
     A=(3.141592653*(D/2)**2)
     Cd=rho*.45*A/2
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     df_theta=pd.DataFrame([])
 
 
-    plt.figure()
+    #plt.figure()
     for theta in angles:
         df_theta=Trejectory(theta,V,x,y,df_theta,len_edge)
         
@@ -156,9 +156,9 @@ for V in Velocities:
         plt.ylim([-.05,.05])
         plt.xlim(horizontal_view)
     
-    plt.grid()
-    for i in h_edge[::2]:
-        ax.add_patch(Rectangle((i, 0), thickness, -depth))   
+    #plt.grid()
+    #for i in h_edge[::2]:
+       # ax.add_patch(Rectangle((i, 0), thickness, -depth))   
     
     plt.figure()
     plt.hist(clear_angles, resoultion, facecolor='green', alpha=0.5)
