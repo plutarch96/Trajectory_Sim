@@ -19,13 +19,13 @@ import os
 import getpass
 import math
 import numpy as np
-
-
-angles=list(np.linspace(-89,89,200))
+# number of points between -89 and 89 degrees
+resoultion=100
+angles=list(np.linspace(-90,90,resoultion))
 
 # spray characteristics
 height=20 # (ft)
-V=20 # (m/s)
+Velocities=[1,2,4,8,12,20] # (m/s)
 D=.004 # (m)
 
 # simulation resolution
@@ -39,42 +39,28 @@ grate_spacing=1 # (in)
 
 # close up of the grate interface
 zoom=1
+# what distance from sprinkler to focus on
+horizontal_view=[6,10]
 
 
-
-
-
-
-x=0
-i=0
-h_edge=[0,thickness]
-y_max=0
-total_range=0
 
 height=height*0.3048
 depth=depth*0.0254
 grate_length=grate_length*0.3048
 grate_spacing=grate_spacing*0.0254
 thickness=thickness*0.0254
-
+i=0
+h_edge=[0,thickness]
 while i<grate_length:
     i=i+grate_spacing
     h_edge.append(i)
     z=i+thickness
     h_edge.append(z)
 
-len_edge=list(range(0,len(h_edge),2))
-  
-y=height
-G=9.80665
-mass=(4/3)*(3.141592653)*((D/2)**3)*(1000)
-rho=1.225
-A=(3.141592653*(D/2)**2)
-Cd=rho*.45*A/2
-fig, ax = plt.subplots()
-df_theta=pd.DataFrame([])
+
 
 def Trejectory(theta,V,x,y,df_theta,len_edge):
+    
 
     theta_name=str(theta)
 
@@ -117,13 +103,14 @@ def Trejectory(theta,V,x,y,df_theta,len_edge):
     
                 if (h_edge[n] <= x <= h_edge[n+1]) and (-depth <= y <= 0) :
                     return
+        
                 
     calculation(V,x,y)
     df_x=pd.DataFrame(x_drag,columns=[x_name])
     df_y=pd.DataFrame(y_drag,columns=[y_name])
     df_xy=pd.concat([df_x, df_y], axis=1)
     
-    plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.7)
+    #plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.7)
     
     df_xy=df_xy.loc[df_xy[y_name]<-depth].dropna()
     df_xy=df_xy.dropna(axis='columns',how='all')
@@ -132,22 +119,51 @@ def Trejectory(theta,V,x,y,df_theta,len_edge):
     
     return df_theta
 
-for theta in angles:
-    df_theta=Trejectory(theta,V,x,y,df_theta,len_edge)
+
+for V in Velocities:
+    print(V)
+    x=0
+
+    y_max=0
+    total_range=0
     
     
-clear_angles=list(df_theta.columns.values)
-clear_angles=[x for x in clear_angles if not 'x' in x]
+    
+    
+    len_edge=list(range(0,len(h_edge),2))
+      
+    y=height
+    G=9.80665
+    mass=(4/3)*(3.141592653)*((D/2)**3)*(1000)
+    rho=1.225
+    A=(3.141592653*(D/2)**2)
+    Cd=rho*.45*A/2
+    fig, ax = plt.subplots()
+    df_theta=pd.DataFrame([])
 
-clear_angles=[s.replace("_y", "") for s in clear_angles]
-clear_angles=[float(x) for x in clear_angles]
-if zoom==1:
-    plt.ylim([-.05,.05])
 
-plt.grid()
-for i in h_edge[::2]:
-    ax.add_patch(Rectangle((i, 0), thickness, -depth))   
-
+    plt.figure()
+    for theta in angles:
+        df_theta=Trejectory(theta,V,x,y,df_theta,len_edge)
+        
+        
+    clear_angles=list(df_theta.columns.values)
+    clear_angles=[x for x in clear_angles if not 'x' in x]
+    
+    clear_angles=[s.replace("_y", "") for s in clear_angles]
+    clear_angles=[float(x) for x in clear_angles]
+    if zoom==1:
+        plt.ylim([-.05,.05])
+        plt.xlim(horizontal_view)
+    
+    plt.grid()
+    for i in h_edge[::2]:
+        ax.add_patch(Rectangle((i, 0), thickness, -depth))   
+    
+    plt.figure()
+    plt.hist(clear_angles, resoultion, facecolor='green', alpha=0.5)
+    plt.title(str(V)+' (m/s)')
+    plt.xlabel('Initial Angle')
 
     
     
