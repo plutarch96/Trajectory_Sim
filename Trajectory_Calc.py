@@ -23,13 +23,15 @@ import numpy as np
 resoultion=1000
 angles=list(np.linspace(-90,90,resoultion))
 
+# simulation resolution
+delt_t=.0001 # (s)
+
 # spray characteristics
 height=10 # (ft)
 Velocities=[1,2,4,8,12,20] # (m/s)
 D=.004 # (m)
 
-# simulation resolution
-delt_t=.0001 # (s)
+
 
 # grate specifications
 depth=1 # (in)
@@ -43,7 +45,7 @@ zoom=0
 horizontal_view=[6,10]
 
 
-
+# Conversions and initializations
 height=height*0.3048
 depth=depth*0.0254
 grate_length=grate_length*0.3048
