@@ -20,29 +20,32 @@ import getpass
 import math
 import numpy as np
 # number of points between -89 and 89 degrees
-resoultion=1000
-angles=list(np.linspace(-90,90,resoultion))
+resoultion=500
+angles=list(np.linspace(-95,15,resoultion))
 
 # simulation resolution
-delt_t=.0001 # (s)
+delt_t=.001 # (s)
 
 # spray characteristics
 height=10 # (ft)
 Velocities=[1,2,4,8,12,20] # (m/s)
-D=.004 # (m)
+D=4 # (mm)
 
 
 
 # grate specifications
 depth=1 # (in)
-thickness=.1875 # (in)
+bearing_bar_thickness=.1875 # (in)
 grate_length=45 # (ft)
 grate_spacing=1 # (in)
 
+# Do you want to see the drop paths?
+path_plotting=1
+
 # close up of the grate interface
-zoom=0
+zoom=1
 # what distance from sprinkler to focus on
-horizontal_view=[6,10]
+#horizontal_view=[0,10]
 
 
 # Conversions and initializations
@@ -50,13 +53,14 @@ height=height*0.3048
 depth=depth*0.0254
 grate_length=grate_length*0.3048
 grate_spacing=grate_spacing*0.0254
-thickness=thickness*0.0254
+bearing_bar_thickness=bearing_bar_thickness*0.0254
+D=D/1000
 i=0
-h_edge=[0,thickness]
+h_edge=[0,bearing_bar_thickness]
 while i<grate_length:
     i=i+grate_spacing
     h_edge.append(i)
-    z=i+thickness
+    z=i+bearing_bar_thickness
     h_edge.append(z)
 
 
@@ -111,15 +115,15 @@ def Trejectory(theta,V,x,y,df_theta,len_edge):
     df_x=pd.DataFrame(x_drag,columns=[x_name])
     df_y=pd.DataFrame(y_drag,columns=[y_name])
     df_xy=pd.concat([df_x, df_y], axis=1)
-    
-    #plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.7)
+    if path_plotting==1:
+        plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.7)
     
     df_xy=df_xy.loc[df_xy[y_name]<-depth].dropna()
     df_xy=df_xy.dropna(axis='columns',how='all')
 
     df_theta=pd.concat([df_theta,df_xy], axis=1)
     
-    return df_theta
+    return df_theta, total_range
 
 
 for V in Velocities:
@@ -140,13 +144,13 @@ for V in Velocities:
     rho=1.225
     A=(3.141592653*(D/2)**2)
     Cd=rho*.45*A/2
-    #fig, ax = plt.subplots()
+    if path_plotting==1:
+        fig, ax = plt.subplots()
     df_theta=pd.DataFrame([])
 
-
-    #plt.figure()
+        
     for theta in angles:
-        df_theta=Trejectory(theta,V,x,y,df_theta,len_edge)
+        df_theta,total_range=Trejectory(theta,V,x,y,df_theta,len_edge)
         
         
     clear_angles=list(df_theta.columns.values)
@@ -156,11 +160,11 @@ for V in Velocities:
     clear_angles=[float(x) for x in clear_angles]
     if zoom==1:
         plt.ylim([-.05,.05])
-        plt.xlim(horizontal_view)
-    
-    #plt.grid()
-    #for i in h_edge[::2]:
-       # ax.add_patch(Rectangle((i, 0), thickness, -depth))   
+        plt.xlim([0,6])
+    if path_plotting==1:
+        plt.grid()
+        for i in h_edge[::2]:
+            ax.add_patch(Rectangle((i, 0), bearing_bar_thickness, -depth))   
     
     plt.figure()
     plt.hist(clear_angles, resoultion, facecolor='green', alpha=0.5)
