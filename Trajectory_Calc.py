@@ -19,25 +19,37 @@ import os
 import getpass
 import math
 import numpy as np
-# number of points between -89 and 89 degrees
-resoultion=200
+# number of points between -95 and 15 degrees
+resoultion=500
 angles=list(np.linspace(-95,15,resoultion))
+angle_bins=[-95,-85,-75,-65,-55,-45,-35,-25,-15,-5,5,15]
 
 # simulation resolution
 delt_t=.001 # (s)
 
 # spray characteristics
 height=15 # (ft)
-Velocities=[1,2,4,8,12,20] # (m/s)
-D=4 # (mm)
 
 
+# velocities for each bin
+sprinkler_name='TY5251'
+Velocities=[16,14,14,14,14,12,12,12,14,12,12] # (m/s)
+D=1 # (mm)
+# Colors for angle bins
+colors=['b','r','g','m','c','y','k','b','r','g','m','c','y']
+
+kfactor=11.2
+pressure=70
+
+flow=kfactor*(70)**.5
 
 # grate specifications
 depth=1 # (in)
 bearing_bar_thickness=.1875 # (in)
 grate_length=45 # (ft)
 grate_spacing=1 # (in)
+
+title_name=sprinkler_name+'_'+str(depth)+'_'+str(bearing_bar_thickness)+'_'+str(grate_spacing)+'_'+str(height)
 
 # Do you want to see the drop paths?
 path_plotting=1
@@ -65,7 +77,7 @@ while i<grate_length:
 
 
 velocity_df=pd.DataFrame([])
-def Trejectory(theta,V,x,y,df_theta,len_edge):
+def Trejectory(theta,V,x,y,df_theta,len_edge,colr):
     
 
     theta_name=str(theta)
@@ -122,7 +134,7 @@ def Trejectory(theta,V,x,y,df_theta,len_edge):
     df_xy=pd.concat([df_x, df_y], axis=1)
     df_xy=df_xy*3.28084
     if path_plotting==1:
-        plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.5)
+        plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.5, color=colr)
     
     df_xy=df_xy.loc[df_xy[y_name]<-depth].dropna()
     df_xy=df_xy.dropna(axis='columns',how='all')
@@ -132,57 +144,59 @@ def Trejectory(theta,V,x,y,df_theta,len_edge):
     return df_theta, total_range
 
 
-for V in Velocities:
-    print(V)
-    x=0
 
-    y_max=0
-    total_range=0
     
-    
-    
-    
-    len_edge=list(range(0,len(h_edge),2))
-      
-    y=height
-    G=9.80665
-    mass=(4/3)*(3.141592653)*((D/2)**3)*(1000)
-    rho=1.225
-    A=(3.141592653*(D/2)**2)
-    Cd=rho*.45*A/2
-    if path_plotting==1:
-        fig, ax = plt.subplots()
-    df_theta=pd.DataFrame([])
 
+x=0
+y_max=0
+total_range=0
+len_edge=list(range(0,len(h_edge),2))
+  
+y=height
+G=9.80665
+mass=(4/3)*(3.141592653)*((D/2)**3)*(1000)
+rho=1.225
+A=(3.141592653*(D/2)**2)
+Cd=rho*.45*A/2
+if path_plotting==1:
+    fig, ax = plt.subplots()
+df_theta=pd.DataFrame([])
+
+    
+for theta in angles:
+    for n in range(0,len(angle_bins)-1):
         
-    for theta in angles:
-        df_theta,total_range=Trejectory(theta,V,x,y,df_theta,len_edge)
+        if theta>=angle_bins[n] and theta<=angle_bins[n+1]:
+            colr=colors[n]
+            V=Velocities[n]
         
-        
-    clear_angles=list(df_theta.columns.values)
-    clear_angles=[x for x in clear_angles if not 'x' in x]
+            df_theta,total_range=Trejectory(theta,V,x,y,df_theta,len_edge,colr)
     
-    clear_angles=[s.replace("_y", "") for s in clear_angles]
-    clear_angles=[float(x) for x in clear_angles]
-    if zoom==1:
-        plt.ylim([-.5,.25])
-        
+    
+clear_angles=list(df_theta.columns.values)
+clear_angles=[x for x in clear_angles if not 'x' in x]
 
-    if path_plotting==1:
-        ax.axhline(y=0,xmin=0, xmax=1.0,color='black')
-        ax.axhline(y=-depth,xmin=0.0, xmax=1.0,color='black')  
-        plt.title(str(V)+' (m/s)')
+clear_angles=[s.replace("_y", "") for s in clear_angles]
+clear_angles=[float(x) for x in clear_angles]
+if zoom==1:
+    plt.ylim([-.5,.25])
+    
 
-    
-    plt.figure()
-    plt.hist(clear_angles, resoultion, facecolor='green', alpha=0.5)
-    plt.title(str(V)+' (m/s)')
-    plt.xlabel('Initial Angle')
+if path_plotting==1:
+    ax.axhline(y=0,xmin=0, xmax=1.0,color='black')
+    ax.axhline(y=-depth,xmin=0.0, xmax=1.0,color='black')  
+    plt.title(title_name)
 
-    clear_angles=pd.DataFrame(clear_angles,columns=[str(V)+' (m/s)'])
-    
-    velocity_df=pd.concat([velocity_df,clear_angles],axis=1)
-    
+
+plt.figure()
+plt.hist(clear_angles, resoultion, facecolor='green', alpha=0.5)
+plt.title(title_name)
+plt.xlabel('Initial Angle')
+
+clear_angles=pd.DataFrame(clear_angles,columns=[str(V)+' (m/s)'])
+
+velocity_df=pd.concat([velocity_df,clear_angles],axis=1)
+
 
 
     
