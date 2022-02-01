@@ -20,14 +20,14 @@ import getpass
 import math
 import numpy as np
 # number of points between -89 and 89 degrees
-resoultion=500
+resoultion=200
 angles=list(np.linspace(-95,15,resoultion))
 
 # simulation resolution
 delt_t=.001 # (s)
 
 # spray characteristics
-height=10 # (ft)
+height=15 # (ft)
 Velocities=[1,2,4,8,12,20] # (m/s)
 D=4 # (mm)
 
@@ -43,14 +43,14 @@ grate_spacing=1 # (in)
 path_plotting=1
 
 # close up of the grate interface
-zoom=1
+zoom=0
 # what distance from sprinkler to focus on
 #horizontal_view=[0,10]
 
 
 # Conversions and initializations
 height=height*0.3048
-depth=depth*0.0254
+depth=depth/12
 grate_length=grate_length*0.3048
 grate_spacing=grate_spacing*0.0254
 bearing_bar_thickness=bearing_bar_thickness*0.0254
@@ -107,22 +107,28 @@ def Trejectory(theta,V,x,y,df_theta,len_edge):
             y_drag.append(y)
             for n in len_edge:
     
-                if (h_edge[n] <= x <= h_edge[n+1]) and (-depth <= y <= 0) :
-                    return
+                if (h_edge[n] <= x <= h_edge[n+1]) and (-depth*0.3048 <= y <= 0) :
+                   
+                    return x_drag, y_drag
+                
+        return x_drag, y_drag
         
                 
-    calculation(V,x,y)
+    x_drag, y_drag=calculation(V,x,y)
     df_x=pd.DataFrame(x_drag,columns=[x_name])
+
     df_y=pd.DataFrame(y_drag,columns=[y_name])
+
     df_xy=pd.concat([df_x, df_y], axis=1)
+    df_xy=df_xy*3.28084
     if path_plotting==1:
-        plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.7)
+        plt.plot(df_xy[x_name],df_xy[y_name],linewidth=.5)
     
     df_xy=df_xy.loc[df_xy[y_name]<-depth].dropna()
     df_xy=df_xy.dropna(axis='columns',how='all')
-
-    df_theta=pd.concat([df_theta,df_xy], axis=1)
     
+    df_theta=pd.concat([df_theta,df_xy], axis=1,ignore_index=False)
+
     return df_theta, total_range
 
 
@@ -159,12 +165,14 @@ for V in Velocities:
     clear_angles=[s.replace("_y", "") for s in clear_angles]
     clear_angles=[float(x) for x in clear_angles]
     if zoom==1:
-        plt.ylim([-.05,.05])
-        plt.xlim([0,6])
+        plt.ylim([-.5,.25])
+        
+
     if path_plotting==1:
-        plt.grid()
-        for i in h_edge[::2]:
-            ax.add_patch(Rectangle((i, 0), bearing_bar_thickness, -depth))   
+        ax.axhline(y=0,xmin=0, xmax=1.0,color='black')
+        ax.axhline(y=-depth,xmin=0.0, xmax=1.0,color='black')  
+        plt.title(str(V)+' (m/s)')
+
     
     plt.figure()
     plt.hist(clear_angles, resoultion, facecolor='green', alpha=0.5)
